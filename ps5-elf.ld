@@ -19,6 +19,8 @@ PHDRS {
 }
 
 SECTIONS {
+    PROVIDE_HIDDEN (__image_start = .);
+
     .text 0 : ALIGN(CONSTANT(MAXPAGESIZE)) {
         QUAD(0xcccccccccccccccc)
         QUAD(0xcccccccccccccccc)
@@ -72,7 +74,11 @@ SECTIONS {
     .tdata : { *(.tdata .tdata.*) } : data
     .tbss : { *(.tbss .tbss.*) } : data
     .bss : {
+        PROVIDE_HIDDEN (__bss_start = .);
         *(.bss .bss.*)
         *(COMMON)
+        PROVIDE_HIDDEN (__bss_end = .);
     } : data
+
+    PROVIDE_HIDDEN (__image_end = .);
 }
