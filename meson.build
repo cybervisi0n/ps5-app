@@ -20,9 +20,32 @@ ps5app_elf = executable(
     dependencies: [],
     link_args: [
         '-lSceSystemService',
-        '-lSceVideoOut'
+        '-lSceVideoOut',
+        '-T' + meson.global_source_root() + '/' + 'ps5-elf.ld'
         ],
     native: false
+)
+
+eboot_elf = custom_target(
+    'eboot.elf',
+    output: 'eboot.elf',
+    depends: [ps5app_elf],
+    command: [
+        ps5_native_tool_exe,
+        'link',
+        '--in',
+        ps5app_elf,
+        '--out',
+        '@OUTPUT@',
+        '--stub-dir',
+        meson.global_source_root() + '/deps/ps5-payload-sdk/target/lib',
+        '--module-sdk',
+        '0x02000009',
+        '--companion_sdk',
+        '0x08050001',
+        '--file-name',
+        'eboot.elf'
+    ]
 )
 
 libc_prx = custom_target(
@@ -38,15 +61,15 @@ libc_prx = custom_target(
                '@OUTPUT@' ]
 )
 
-ps5app_self = custom_target(
-    'ps5-app.self',
-    output: 'ps5-app.self',
-    depends: [ps5app_elf],
+eboot_bin = custom_target(
+    'eboot.bin',
+    output: 'eboot.bin',
+    depends: [eboot_elf],
     command: [ ps5_native_tool_exe, 
                'self',
                '--sign',
                '--in',
-               ps5app_elf,
+               eboot_elf,
                '--out',
                '@OUTPUT@' ]
 )
@@ -59,11 +82,11 @@ app_folder = custom_target(
     app_serial,
     output: app_serial,
     build_by_default: true,
-    depends: [libc_prx, ps5app_self],
+    depends: [libc_prx, eboot_bin],
     command: [
         build_app_folder_sh,
         meson.project_source_root(),
-        ps5app_self,
+        eboot_bin,
         libc_prx,
         sce_sys_source,
         '@OUTPUT@'
