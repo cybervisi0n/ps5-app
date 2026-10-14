@@ -39,7 +39,10 @@ SECTIONS {
     .data.rel.ro : {
         *(.data.rel.ro .data.rel.ro.*)
     } : relro
-    .got : { *(.got) } : relro
+    .got : { 
+        BYTE(0)
+        . = ALIGN(8);
+        *(.got) } : relro
     .got.plt : { *(.got.plt) } : relro
     .preinit_array : {
         PROVIDE_HIDDEN(__preinit_array_start = .);

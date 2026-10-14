@@ -17,7 +17,7 @@ subdir('tools')
 
 ps5app_elf = executable(
     'ps5-app.elf',
-    sources: files('src/main.c'),
+    sources: files('src/main.cpp'),
     dependencies: [],
     link_args: [
         '-lSceSystemService',
