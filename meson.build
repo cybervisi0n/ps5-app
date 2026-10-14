@@ -6,9 +6,20 @@ project('ps5-app', ['c', 'cpp'],
     meson_version: '>=1.2.0',
     version: '1.0'
 )
+cpp = meson.get_compiler('cpp')
 
 # Define your app's serial below:
 app_serial = 'PPSA99999'
+
+# PS5 Payload SDK library dirs
+ps5_lib_dirs = [
+    meson.project_source_root() + '/deps/ps5-payload-sdk/target/lib',
+    meson.project_source_root() + '/deps/ps5-payload-sdk/target/user/homebrew/lib',
+]
+
+ps5_includes = include_directories('deps/ps5-payload-sdk/target/user/homebrew/include')
+
+ps5app_libs = []
 
 # PS5 App C Runtime & native tools
 subdir('crt')
@@ -27,18 +38,34 @@ elf_link_args = [
 ]
 
 # Add your own link arguments here
-app_link_args = [
-    '-lSceSystemService',
-    '-lSceVideoOut',
+ps5app_link_args = [
 ]
+
+# Add external libraries here
+ps5app_external_libs = declare_dependency(
+    dependencies: [
+        cpp.find_library('SceAudioOut', dirs: ps5_lib_dirs),
+        cpp.find_library('SceImeDialog', dirs: ps5_lib_dirs),
+        cpp.find_library('SceKeyboard', dirs: ps5_lib_dirs),
+        cpp.find_library('ScePad', dirs: ps5_lib_dirs),
+        cpp.find_library('SceSystemService', dirs: ps5_lib_dirs),
+        cpp.find_library('SceUserService', dirs: ps5_lib_dirs),
+        cpp.find_library('SceVideoOut', dirs: ps5_lib_dirs),
+        cpp.find_library('dl', dirs: ps5_lib_dirs),
+        cpp.find_library('iconv', dirs: ps5_lib_dirs),
+        cpp.find_library('SDL2', dirs: ps5_lib_dirs)
+    ]
+)
 
 # Link ELF file (PIE)
 ps5app_elf = executable(
     'ps5-app.elf',
     sources: ps5app_srcs,
-    dependencies: [],
-    link_args: [elf_link_args, app_link_args],
-    link_with: [crt_lib],
+    include_directories: ps5_includes,
+    dependencies: ps5app_external_libs,
+    link_args: [elf_link_args, ps5app_link_args],
+    link_with: ps5app_libs,
+    link_whole: crt_lib,
     native: false
 )
 

@@ -7,7 +7,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     python3 libnss-unknown fuse file \
     ninja-build wget ca-certificates git \
     clang unzip llvm lld zlib1g-dev \
-    imagemagick
+    imagemagick cmake
 
 RUN mkdir -p /home
 RUN chmod 777 /home

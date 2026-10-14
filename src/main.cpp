@@ -2,6 +2,8 @@
 #include <cstddef>
 #include <cstdint>
 
+#include <SDL2/SDL.h>
+
 extern "C" {
     int sceSystemServiceHideSplashScreen();
     int sceVideoOutOpen(std::int32_t user_id, std::int32_t bus_type, std::int32_t index,
@@ -19,9 +21,16 @@ int main() {
     sceSystemServiceHideSplashScreen();
     const int video = sceVideoOutOpen(0xff, 0, 0, nullptr);
     sceVideoOutSetFlipRate(video, 0);
+    
     printf("Hello world\n");
+    int frameCount = 0;
     while(true) {
+        if(frameCount > 600) {
+            break;
+        }
         sceVideoOutWaitVblank(video);
+        frameCount++;
     }
+    SDL_Init(SDL_INIT_VIDEO);
     return 0;
 }
