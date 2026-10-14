@@ -10,28 +10,39 @@ project('ps5-app', ['c', 'cpp'],
 # Define your app's serial below:
 app_serial = 'PPSA99999'
 
-fs = import('fs')
-
+# PS5 App C Runtime & native tools
 subdir('crt')
 subdir('tools')
 
+# App code: define your source files in src/meson.build
+subdir('src')
+
+# These arguments are required to make an .ELF file that the PS5 will understand
+elf_link_args = [
+    '-nostartfiles',
+    '-T' + meson.global_source_root() + '/' + 'ps5-elf.ld',
+    '-e',
+    '_start',
+    '-Wl,--version-script=' + meson.global_source_root() + '/' + 'ps5-app-symbols.map',
+]
+
+# Add your own link arguments here
+app_link_args = [
+    '-lSceSystemService',
+    '-lSceVideoOut',
+]
+
+# Link ELF file (PIE)
 ps5app_elf = executable(
     'ps5-app.elf',
-    sources: files('src/main.cpp'),
+    sources: ps5app_srcs,
     dependencies: [],
-    link_args: [
-        '-lSceSystemService',
-        '-lSceVideoOut',
-        '-nostartfiles',
-        '-T' + meson.global_source_root() + '/' + 'ps5-elf.ld',
-        '-e',
-        '_start',
-        '-Wl,--version-script=' + meson.global_source_root() + '/' + 'ps5-app-symbols.map',
-        ],
+    link_args: [elf_link_args, app_link_args],
     link_with: [crt_lib],
     native: false
 )
 
+# Convert elf file to PS5 ELF
 eboot_elf = custom_target(
     'eboot.elf',
     output: 'eboot.elf',
@@ -54,19 +65,7 @@ eboot_elf = custom_target(
     ]
 )
 
-libc_prx = custom_target(
-    'libc.prx',
-    output: 'libc.prx',
-    depends: [libc_elf],
-    command: [ ps5_native_tool_exe, 
-               'self',
-               '--sign',
-               '--in',
-               libc_elf,
-               '--out',
-               '@OUTPUT@' ]
-)
-
+# Sign eboot.elf to eboot.bin
 eboot_bin = custom_target(
     'eboot.bin',
     output: 'eboot.bin',
@@ -80,10 +79,23 @@ eboot_bin = custom_target(
                '@OUTPUT@' ]
 )
 
+# Generate libc.prx stub (required by PS5 loader)
+libc_prx = custom_target(
+    'libc.prx',
+    output: 'libc.prx',
+    depends: [libc_elf],
+    command: [ ps5_native_tool_exe, 
+               'self',
+               '--sign',
+               '--in',
+               libc_elf,
+               '--out',
+               '@OUTPUT@' ]
+)
+
+# Build the app folder
 build_app_folder_sh = files('scripts/build_app_folder.sh')
 sce_sys_source = meson.project_source_root() + '/sce_sys'
-
-
 app_folder = custom_target(
     app_serial,
     output: app_serial,
