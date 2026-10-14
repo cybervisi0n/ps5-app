@@ -12,17 +12,23 @@ app_serial = 'PPSA99999'
 
 fs = import('fs')
 
+subdir('crt')
 subdir('tools')
 
 ps5app_elf = executable(
     'ps5-app.elf',
-    sources: files('src/main.cpp'),
+    sources: files('src/main.c'),
     dependencies: [],
     link_args: [
         '-lSceSystemService',
         '-lSceVideoOut',
-        '-T' + meson.global_source_root() + '/' + 'ps5-elf.ld'
+        '-nostartfiles',
+        '-T' + meson.global_source_root() + '/' + 'ps5-elf.ld',
+        '-e',
+        '_start',
+        '-Wl,--version-script=' + meson.global_source_root() + '/' + 'ps5-app-symbols.map',
         ],
+    link_with: [crt_lib],
     native: false
 )
 
