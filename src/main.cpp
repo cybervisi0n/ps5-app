@@ -2,8 +2,6 @@
 #include <cstddef>
 #include <cstdint>
 
-#include <SDL2/SDL.h>
-
 extern "C" {
     int sceSystemServiceHideSplashScreen();
     int sceVideoOutOpen(std::int32_t user_id, std::int32_t bus_type, std::int32_t index,
@@ -31,6 +29,6 @@ int main() {
         sceVideoOutWaitVblank(video);
         frameCount++;
     }
-    SDL_Init(SDL_INIT_VIDEO);
+    //SDL_Init(SDL_INIT_VIDEO);
     return 0;
 }

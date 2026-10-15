@@ -11,13 +11,18 @@ cpp = meson.get_compiler('cpp')
 # Define your app's serial below:
 app_serial = 'PPSA99999'
 
-# PS5 Payload SDK library dirs
+# External static libraries
 ps5_lib_dirs = [
     meson.project_source_root() + '/deps/ps5-payload-sdk/target/lib',
     meson.project_source_root() + '/deps/ps5-payload-sdk/target/user/homebrew/lib',
+    meson.project_source_root() + '/deps/lib',
 ]
 
-ps5_includes = include_directories('deps/ps5-payload-sdk/target/user/homebrew/include')
+ps5_includes = include_directories(
+    'deps/ps5-payload-sdk/target/user/homebrew/include',
+    'deps/include',
+    'include'
+)
 
 ps5app_libs = []
 
@@ -51,9 +56,6 @@ ps5app_external_libs = declare_dependency(
         cpp.find_library('SceSystemService', dirs: ps5_lib_dirs),
         cpp.find_library('SceUserService', dirs: ps5_lib_dirs),
         cpp.find_library('SceVideoOut', dirs: ps5_lib_dirs),
-        cpp.find_library('dl', dirs: ps5_lib_dirs),
-        cpp.find_library('iconv', dirs: ps5_lib_dirs),
-        cpp.find_library('SDL2', dirs: ps5_lib_dirs)
     ]
 )
 
