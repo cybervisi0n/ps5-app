@@ -56,6 +56,28 @@ ps5app_external_libs = declare_dependency(
         cpp.find_library('SceSystemService', dirs: ps5_lib_dirs),
         cpp.find_library('SceUserService', dirs: ps5_lib_dirs),
         cpp.find_library('SceVideoOut', dirs: ps5_lib_dirs),
+
+        # OpenGL libraries
+        cpp.find_library('blake3', dirs: ps5_lib_dirs),
+        cpp.find_library('compiler', dirs: ps5_lib_dirs),
+        cpp.find_library('gallium', dirs: ps5_lib_dirs),
+        cpp.find_library('glapi_bridge', dirs: ps5_lib_dirs),
+        cpp.find_library('glapi', dirs: ps5_lib_dirs),
+        cpp.find_library('glcpp', dirs: ps5_lib_dirs),
+        cpp.find_library('glsl_util', dirs: ps5_lib_dirs),
+        cpp.find_library('glsl', dirs: ps5_lib_dirs),
+        cpp.find_library('mesa_util_c11', dirs: ps5_lib_dirs),
+        cpp.find_library('mesa_util_simd', dirs: ps5_lib_dirs),
+        cpp.find_library('mesa_util_clflush', dirs: ps5_lib_dirs),
+        cpp.find_library('mesa_util_clflushopt', dirs: ps5_lib_dirs),
+        cpp.find_library('mesa_util', dirs: ps5_lib_dirs),
+        cpp.find_library('mesa', dirs: ps5_lib_dirs),
+        cpp.find_library('mesa_sse41', dirs: ps5_lib_dirs),
+        cpp.find_library('nir', dirs: ps5_lib_dirs),
+        cpp.find_library('ps5_opengl_core33', dirs: ps5_lib_dirs),
+        cpp.find_library('psbc.ps5', dirs: ps5_lib_dirs),
+        cpp.find_library('softpipe', dirs: ps5_lib_dirs),
+        cpp.find_library('vtn', dirs: ps5_lib_dirs),
     ]
 )
 
