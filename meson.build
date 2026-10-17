@@ -27,6 +27,7 @@ ps5_includes = include_directories(
 ps5app_libs = []
 
 # PS5 App C Runtime & native tools
+subdir('agc_stubs')
 subdir('crt')
 subdir('tools')
 
@@ -97,7 +98,11 @@ ps5app_elf = executable(
 eboot_elf = custom_target(
     'eboot.elf',
     output: 'eboot.elf',
-    depends: [ps5app_elf],
+    depends: [
+        ps5app_elf, 
+        sce_agc_lib, 
+        sce_agc_driver_lib
+    ],
     command: [
         ps5_native_tool_exe,
         'link',
@@ -107,6 +112,10 @@ eboot_elf = custom_target(
         '@OUTPUT@',
         '--stub-dir',
         meson.global_source_root() + '/deps/ps5-payload-sdk/target/lib',
+        '--stub',
+        sce_agc_lib,
+        '--stub',
+        sce_agc_driver_lib,
         '--module-sdk',
         '0x02000009',
         '--companion_sdk',
