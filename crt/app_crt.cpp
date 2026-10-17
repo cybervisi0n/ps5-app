@@ -26,8 +26,6 @@ extern "C"
     extern Initializer __init_array_end[] __attribute__((weak));
     extern Initializer __fini_array_start[] __attribute__((weak));
     extern Initializer __fini_array_end[] __attribute__((weak));
-
-    extern int ps5agcMain(void);
 }
 
 namespace
@@ -77,7 +75,6 @@ _start(void *process_parameters, Destructor loader_teardown)
         (void)atexit(loader_teardown);
     (void)atexit(_fini);
     _init();
-    ps5agcMain();
     const int status = application_main(argc, argv, nullptr);
     catchReturnFromMain(status);
     exit(status);

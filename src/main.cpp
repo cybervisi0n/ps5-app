@@ -25,6 +25,8 @@ int main() {
     const int video = sceVideoOutOpen(0xff, 0, 0, nullptr);
     sceVideoOutSetFlipRate(video, 0);
 
+    
+
    const EGLint surface_type = EGL_WINDOW_BIT;
    const EGLint ca[] = {EGL_SURFACE_TYPE,surface_type,EGL_RENDERABLE_TYPE,EGL_OPENGL_BIT,
       EGL_RED_SIZE,8,EGL_GREEN_SIZE,8,EGL_BLUE_SIZE,8,EGL_ALPHA_SIZE,8,EGL_DEPTH_SIZE,24,EGL_NONE};
@@ -38,15 +40,41 @@ int main() {
    int current = 0, passed = 0, clean = 1;
    unsigned completed = 0;
 
+   EGLint major = 3;
+   EGLint minor = 3;
+   int frameCount = 0;
+   while(true) {
+        // Wait 10 sec to give me time to attach debugger
+       if(frameCount > 600) {
+           break;
+       }
+       //eglSwapBuffers(display, surface);
+       sceVideoOutWaitVblank(video);
+       frameCount++;
+   }
+
+
+   eglInitialize(display, &major, &minor);
+   //eglBindAPI(EGL_OPENGL_API);
+   //eglChooseConfig(display, ca, &config, 1, &count);
+   //surface = eglCreateWindowSurface(display,config,(EGLNativeWindowType)0,NULL);
+   //context = eglCreateContext(display,config,EGL_NO_CONTEXT,ctx);
+   //eglMakeCurrent(display,surface,surface,context);
+//
+   //glClearColor(1.0f, 0.0f, 0.0f, 1.0f);
+   //glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+   //eglSwapBuffers(display,surface);
+
+
 
     
     printf("Hello world\n");
-    int frameCount = 0;
+    
     while(true) {
-        if(frameCount > 600) {
-            break;
-        }
-        sceVideoOutWaitVblank(video);
+        //if(frameCount > 600) {
+        //    break;
+        //}
+        //eglSwapBuffers(display, surface);
         frameCount++;
     }
     //SDL_Init(SDL_INIT_VIDEO);
