@@ -26,6 +26,28 @@ ps5_includes = include_directories(
 
 ps5app_libs = []
 
+# Compile args
+ps5app_shared_args = [
+    '-g'
+]
+
+ps5app_c_args = ps5app_shared_args + [
+
+]
+
+ps5app_cpp_args = ps5app_shared_args + [
+
+]
+
+add_project_arguments(ps5app_c_args,
+    language: 'c',
+    native: false
+)
+add_project_arguments(ps5app_cpp_args,
+    language: 'cpp',
+    native: false
+)
+
 # PS5 App C Runtime & native tools
 subdir('agc_stubs')
 subdir('crt')

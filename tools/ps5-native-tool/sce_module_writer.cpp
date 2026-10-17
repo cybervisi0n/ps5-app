@@ -591,6 +591,40 @@ void write_program_header(std::span<std::uint8_t> output, std::size_t index,
     write_u64(output, at + 48, header.alignment);
 }
 
+
+constexpr std::uint32_t kSectionStringTable = 3;
+
+struct OutputSectionHeader
+{
+    std::uint32_t name{};
+    std::uint32_t type{};
+    std::uint64_t flags{};
+    std::uint64_t address{};
+    std::uint64_t offset{};
+    std::uint64_t size{};
+    std::uint32_t link{};
+    std::uint32_t info{};
+    std::uint64_t alignment{1};
+    std::uint64_t entry_size{};
+};
+
+void write_section_header(std::span<std::uint8_t> output, std::size_t index,
+                          const OutputSectionHeader &header)
+{
+    const std::size_t at = static_cast<std::size_t>(read_u64(output, 0x28)) + index * 0x40;
+    require(at + 0x40 <= output.size(), "section header write outside output");
+    write_u32(output, at, header.name);
+    write_u32(output, at + 4, header.type);
+    write_u64(output, at + 8, header.flags);
+    write_u64(output, at + 16, header.address);
+    write_u64(output, at + 24, header.offset);
+    write_u64(output, at + 32, header.size);
+    write_u32(output, at + 40, header.link);
+    write_u32(output, at + 44, header.info);
+    write_u64(output, at + 48, header.alignment);
+    write_u64(output, at + 56, header.entry_size);
+}
+
 void write_elf_header(std::span<std::uint8_t> output, std::uint64_t entry)
 {
     require(output.size() >= kPage, "output cannot hold ELF header");
@@ -877,7 +911,133 @@ Bytes write_executable(const Image &image, std::span<const Stub> stubs, const Op
     copy_bytes(output, version_file, version);
     copy_bytes(output, tail_file, tail_note);
 
+    // Preserve non-allocated source sections (DWARF, .symtab/.strtab, etc.) at
+    // file offsets outside the loader's PT_LOAD ranges. Keep source section
+    // indices stable so symbol st_shndx and section link/info fields remain valid.
+    const std::size_t source_section_count = image.sections.size();
+    require(source_section_count < std::numeric_limits<std::uint16_t>::max(),
+            "too many ELF sections to encode in ELF64 header");
+    std::size_t shstr_index = source_section_count;
+    for (std::size_t i = 0; i < source_section_count; ++i)
+        if (image.sections[i].name == ".shstrtab")
+        {
+            shstr_index = i;
+            break;
+        }
+
+    std::vector<OutputSectionHeader> section_headers(source_section_count +
+                                                     (shstr_index == source_section_count ? 1 : 0));
+    StringTable section_names;
+    std::vector<std::uint32_t> section_name_offsets(source_section_count);
+    for (std::size_t i = 0; i < source_section_count; ++i)
+        section_name_offsets[i] = section_names.add(image.sections[i].name);
+    if (shstr_index == source_section_count)
+        section_name_offsets.push_back(section_names.add(".shstrtab"));
+
+    const auto set_section = [&](std::size_t index, const Section &source,
+                                 std::uint64_t offset, std::uint64_t size,
+                                 std::uint64_t address)
+    {
+        section_headers[index] = {section_name_offsets[index], source.type, source.flags,
+                                  address, offset, size, source.link, source.info,
+                                  std::max<std::uint64_t>(source.alignment, 1), source.entry_size};
+    };
+    const auto set_source_section = [&](std::size_t index, const Section &source,
+                                        std::uint64_t offset, std::uint64_t size)
+    {
+        set_section(index, source, offset, size, source.address);
+    };
+    const auto set_nonloadable_metadata = [&](std::size_t index, const Section &source,
+                                               std::uint64_t offset, std::uint64_t size,
+                                               std::uint64_t address)
+    {
+        // The writer stores rebuilt dynamic metadata in a dedicated PT_LOAD
+        // with p_flags == 0 (a PS5 loader convention). Generic ELF debuggers do
+        // not consider that segment a usable mapping for SHF_ALLOC sections,
+        // so retaining SHF_ALLOC here makes GDB report these sections as being
+        // outside all loadable segments. Section flags do not drive the PS5
+        // dynamic loader; PT_DYNAMIC and DT_* entries do.
+        Section metadata = source;
+        metadata.flags &= ~std::uint64_t{0x2}; // clear SHF_ALLOC
+        set_section(index, metadata, offset, size, address);
+    };
+
+    for (std::size_t i = 0; i < source_section_count; ++i)
+    {
+        const Section &source = image.sections[i];
+        if (i == 0)
+        {
+            section_headers[i] = {};
+            continue;
+        }
+
+        // These sections were rebuilt by the PS5 writer; their section headers
+        // must describe the generated data rather than the original PIE bytes.
+        if (source.name == ".dynstr")
+            set_nonloadable_metadata(i, source, dynamic_file_at(string_address), dynamic_strings.size(), string_address);
+        else if (source.name == ".dynsym")
+            set_nonloadable_metadata(i, source, dynamic_file_at(symbol_address), dynamic_symbols.size(), symbol_address);
+        else if (source.name == ".hash")
+            set_nonloadable_metadata(i, source, dynamic_file_at(hash_address), hash.size(), hash_address);
+        else if (source.name == ".dynamic")
+            set_nonloadable_metadata(i, source, dynamic_file_at(dynamic_address), dynamic.size(), dynamic_address);
+        else if (source.name == ".rela.dyn")
+            set_nonloadable_metadata(i, source, dynamic_file_at(relocation_address), rela_dynamic.size(), relocation_address);
+        else if (source.name == ".rela.plt")
+            set_nonloadable_metadata(i, source, dynamic_file_at(jump_address), rela_plt.size(), jump_address);
+        else if (source.name == ".gnu.hash")
+        {
+            // The output dynamic tables use the rebuilt SysV hash table. This
+            // input-only GNU hash table is not present in the output image.
+            // Mark it non-allocated and empty so GDB/readelf do not try to map
+            // stale input addresses into a PT_LOAD segment.
+            Section empty = source;
+            empty.flags &= ~std::uint64_t{0x2}; // clear SHF_ALLOC
+            set_section(i, empty, source.file_offset, 0, 0);
+        }
+        else if (source.name == ".shstrtab")
+        {
+            // Filled after the complete section-name table has been built.
+            set_source_section(i, source, 0, 0);
+        }
+        else if (source.no_bits())
+            set_source_section(i, source, source.file_offset, source.size);
+        else if (!source.allocated())
+        {
+            const std::uint64_t alignment = std::max<std::uint64_t>(source.alignment, 1);
+            const std::uint64_t file_offset = align_up(output.size(), alignment);
+            output.resize(static_cast<std::size_t>(file_offset + source.data.size()), 0);
+            copy_bytes(output, file_offset, source.data);
+            set_source_section(i, source, file_offset, source.data.size());
+        }
+        else if (metadata_section(source.name))
+            set_source_section(i, source, source.file_offset, 0);
+        else
+            set_source_section(i, source, source.file_offset, source.size);
+    }
+
+    // Build the section-name string table after all source names are known.
+    const std::uint64_t shstr_file = align_up(output.size(), 8);
+    output.resize(static_cast<std::size_t>(shstr_file), 0);
+    const Bytes shstr_data = section_names.data();
+    output.insert(output.end(), shstr_data.begin(), shstr_data.end());
+    const std::size_t shstr_header_index =
+        shstr_index == source_section_count ? source_section_count : shstr_index;
+    section_headers[shstr_header_index] = {
+        section_name_offsets[shstr_header_index], kSectionStringTable, 0, 0, shstr_file,
+        shstr_data.size(), 0, 0, 1, 0};
+
+    const std::uint64_t section_table_offset = align_up(output.size(), 8);
+    output.resize(static_cast<std::size_t>(section_table_offset +
+                                           section_headers.size() * 0x40), 0);
+
     write_elf_header(output, image.entry);
+    write_u64(output, 0x28, section_table_offset);
+    write_u16(output, 0x3a, 0x40);
+    write_u16(output, 0x3c, static_cast<std::uint16_t>(section_headers.size()));
+    write_u16(output, 0x3e, static_cast<std::uint16_t>(shstr_header_index));
+    for (std::size_t i = 0; i < section_headers.size(); ++i)
+        write_section_header(output, i, section_headers[i]);
     const std::uint64_t ro_file =
         eh_header != nullptr ? eh_header->file_offset : section(image, ".eh_frame").file_offset;
     const std::uint64_t data_file = dynamic_source.file_offset;
