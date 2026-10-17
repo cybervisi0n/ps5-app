@@ -63,6 +63,7 @@ elf_link_args = [
     '-e',
     '_start',
     '-Wl,--version-script=' + meson.global_source_root() + '/' + 'ps5-app-symbols.map',
+    '-pthread'
 ]
 
 # Add your own link arguments here
@@ -79,6 +80,8 @@ ps5app_external_libs = declare_dependency(
         cpp.find_library('SceSystemService', dirs: ps5_lib_dirs),
         cpp.find_library('SceUserService', dirs: ps5_lib_dirs),
         cpp.find_library('SceVideoOut', dirs: ps5_lib_dirs),
+
+        cpp.find_library('kernel', dirs: ps5_lib_dirs),
 
         # OpenGL libraries
         cpp.find_library('blake3', dirs: ps5_lib_dirs),
