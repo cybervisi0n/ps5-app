@@ -80,6 +80,8 @@ ps5app_external_libs = declare_dependency(
         cpp.find_library('SceSystemService', dirs: ps5_lib_dirs),
         cpp.find_library('SceUserService', dirs: ps5_lib_dirs),
         cpp.find_library('SceVideoOut', dirs: ps5_lib_dirs),
+        cpp.find_library('SceAgc', dirs: ps5_lib_dirs),
+        cpp.find_library('SceAgcDriver', dirs: ps5_lib_dirs),
 
         cpp.find_library('kernel', dirs: ps5_lib_dirs),
 

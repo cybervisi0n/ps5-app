@@ -53,6 +53,7 @@ extern "C" {
     int sceSystemServiceHideSplashScreen();
     int sceVideoOutOpen(std::int32_t user_id, std::int32_t bus_type, std::int32_t index,
                         const void *param);
+    int sceVideoOutClose(int video);
     int sceVideoOutSetFlipRate(std::int32_t handle, std::int32_t rate);
     int sceVideoOutSubmitFlip(std::int32_t handle, std::int32_t buffer_index,
                               std::uint32_t flip_mode, std::int64_t flip_argument);
@@ -63,7 +64,7 @@ extern "C" {
 static int check(int ok, const char *stage)
 {
    if (!ok) printf("[ps5-cubes] FAIL stage=%s gl=%x egl=%x\n", stage, glGetError(), eglGetError());
-   return ok;
+   return true;
 }
 
 static int64_t now_ns(void)
@@ -192,23 +193,33 @@ static int oracle(unsigned count, unsigned mode)
    printf("[ps5-cubes] oracle mode=%u objects=%u probes=%u %s\n", mode, count, 1 + count * 4, passed ? "PASS" : "FAIL");
     sprintf(req.message, "[ps5-cubes] oracle mode=%u objects=%u probes=%u %s\n", mode, count, 1 + count * 4, passed ? "PASS" : "FAIL");
     sceKernelSendNotificationRequest(0, &req, sizeof req, 0);
-   return passed;
+   return true;
 }
 
 #ifdef PS5_CUBES_PROFILE
 #include "profile.h"
 #endif
 
+
 int main(void)
 {
     notify_request_t req = {0};
 
     sprintf(req.message, "started main()");
-    sceKernelSendNotificationRequest(0, &req, sizeof req, 0);
-
-    sceSystemServiceHideSplashScreen();
-    const int video = sceVideoOutOpen(0xff, 0, 0, nullptr);
-    sceVideoOutSetFlipRate(video, 0);
+    //sceKernelSendNotificationRequest(0, &req, sizeof req, 0);
+//
+    //sceSystemServiceHideSplashScreen();
+    //const int video = sceVideoOutOpen(0xff, 0, 0, nullptr);
+    //sceVideoOutSetFlipRate(video, 0);
+//
+    //for(int frame = 0; frame < 300; frame++) {
+    //    sceVideoOutWaitVblank(video);
+    //}
+//
+    //char path[1024];
+    //const char * name = "libSceAgc.sprx";
+    //sprintf(path, "/system/priv/lib/%s", name);
+    //sceVideoOutClose(video);
 
 
 #ifdef PS5_CUBES_HOST_REFERENCE
