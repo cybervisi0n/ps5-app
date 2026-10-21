@@ -70,9 +70,10 @@ elf_link_args = [
 ps5app_link_args = [
 ]
 
-# Add external libraries here
 ps5app_external_libs = declare_dependency(
     dependencies: [
+        # SCE Core libraries
+        cpp.find_library('kernel', dirs: ps5_lib_dirs),
         cpp.find_library('SceAudioOut', dirs: ps5_lib_dirs),
         cpp.find_library('SceImeDialog', dirs: ps5_lib_dirs),
         cpp.find_library('SceKeyboard', dirs: ps5_lib_dirs),
@@ -82,8 +83,6 @@ ps5app_external_libs = declare_dependency(
         cpp.find_library('SceVideoOut', dirs: ps5_lib_dirs),
         cpp.find_library('SceAgc', dirs: ps5_lib_dirs),
         cpp.find_library('SceAgcDriver', dirs: ps5_lib_dirs),
-
-        cpp.find_library('kernel', dirs: ps5_lib_dirs),
 
         # OpenGL libraries
         cpp.find_library('blake3', dirs: ps5_lib_dirs),
@@ -106,6 +105,9 @@ ps5app_external_libs = declare_dependency(
         cpp.find_library('psbc.ps5', dirs: ps5_lib_dirs),
         cpp.find_library('softpipe', dirs: ps5_lib_dirs),
         cpp.find_library('vtn', dirs: ps5_lib_dirs),
+
+        # Add your own external libraries here
+        
     ]
 )
 
