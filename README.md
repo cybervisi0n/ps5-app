@@ -1,5 +1,7 @@
-# ps5-app
-A minimal template for building a native app to run from the PS5's home screen. Currently supports the meson build system, with plans to add support for other build systems. Based on the work of [BlackBearReloaded](https://github.com/blackbearreloaded/ps5-native-app-boilerplate) and the [PS5 Payload SDK](https://github.com/ps5-payload-dev/sdk)
+# ps5-app-sdk
+A minimal template for building a native app with OpenGL support to run from the PS5's home screen. Currently supports the meson build system, with plans to add support for other build systems. Based on the work of [BlackBearReloaded](https://github.com/blackbearreloaded/ps5-native-app-boilerplate) and the [PS5 Payload SDK](https://github.com/ps5-payload-dev/sdk)
+
+![PS5 OpenGL Demo](images/demo.png)
 
 ## Requirements
 Any linux system with Docker
