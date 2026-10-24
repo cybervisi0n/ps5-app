@@ -25,6 +25,11 @@ Use the ./drun.sh script to interface with the dev container. On the first run o
 * Replace the pic0, pic1, and icon0.png with any images
 * Replace snd0.at9 with music encoded with ATRAC9
 
+### Notes on Native Apps
+* Native apps are not kernel payloads, they do not have kernel-level access by default
+* Native apps are launched differently from payloads, and do not have payload args
+* Native apps cannot directly make syscalls like payloads can
+* Calling functions like dlopen() will crash native apps due to the inability to make syscalls
 
 ## Debugging With GDB
 
